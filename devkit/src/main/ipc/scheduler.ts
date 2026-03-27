@@ -2,9 +2,11 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
 import cron from 'node-cron'
 import { getDb } from '../db'
+import { startScriptExecution } from '../script-execution'
 import { toIpcReply } from '../../shared/ipc-clone'
 import { IPC } from '../../shared/types'
 import type { ScheduledTask } from '../../shared/types'
+import { rowToScript } from './scripts'
 
 // Track active cron jobs: taskId -> cron.ScheduledTask
 const cronJobs = new Map<string, cron.ScheduledTask>()
@@ -38,6 +40,12 @@ function scheduleTask(task: ScheduledTask): void {
   cronJobs.set(task.id, job)
 }
 
+function broadcastTaskListChanged(): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(IPC.TASK_LIST_CHANGED)
+  }
+}
+
 async function triggerTask(taskId: string): Promise<void> {
   const db = getDb()
   const row = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(taskId) as Record<string, unknown> | undefined
@@ -46,14 +54,50 @@ async function triggerTask(taskId: string): Promise<void> {
   const task = rowToTask(row)
   const now = new Date().toISOString()
   db.prepare('UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?').run(now, 'running', taskId)
+  broadcastTaskListChanged()
 
-  // Notify all windows
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send(IPC.TASK_LIST)
+  const scriptRow = db.prepare('SELECT * FROM scripts WHERE id = ?').get(task.scriptId) as Record<string, unknown> | undefined
+  if (!scriptRow) {
+    const finishedAt = new Date().toISOString()
+    db.prepare('UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?').run(finishedAt, 'error', taskId)
+    broadcastTaskListChanged()
+    const alert = toIpcReply({
+      taskId,
+      taskName: task.name,
+      exitCode: -1,
+      executionId: '',
+      scriptName: '(脚本不存在或已删除)'
+    })
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send(IPC.TASK_RUN_ALERT, alert)
+    }
+    return
   }
 
-  // Trigger via IPC reuse - send to main handler
-  ipcMain.emit(IPC.SCRIPT_RUN, { sender: { send: () => {} } }, task.scriptId, task.params)
+  try {
+    startScriptExecution({
+      db,
+      script: rowToScript(scriptRow),
+      params: task.params,
+      taskId,
+      outputWebContents: null
+    })
+  } catch (e) {
+    const finishedAt = new Date().toISOString()
+    db.prepare('UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?').run(finishedAt, 'error', taskId)
+    broadcastTaskListChanged()
+    const msg = e instanceof Error ? e.message : String(e)
+    const alert = toIpcReply({
+      taskId,
+      taskName: task.name,
+      exitCode: -1,
+      executionId: '',
+      scriptName: msg
+    })
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send(IPC.TASK_RUN_ALERT, alert)
+    }
+  }
 }
 
 export function initScheduler(): void {

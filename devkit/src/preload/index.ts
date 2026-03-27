@@ -86,6 +86,41 @@ contextBridge.exposeInMainWorld('api', {
   taskDelete: (id: string) => invokeTwo(IPC.TASK_DELETE, id),
   taskToggle: (id: string) => invokeTwo(IPC.TASK_TOGGLE, id),
   taskRunNow: (id: string) => invokeTwo(IPC.TASK_RUN_NOW, id),
+  onTaskListChanged: (cb: () => void) => {
+    const handler = () => {
+      try {
+        cb()
+      } catch (e) {
+        console.error('[preload] onTaskListChanged', e)
+      }
+    }
+    ipcRenderer.on(IPC.TASK_LIST_CHANGED, handler)
+    return () => ipcRenderer.removeListener(IPC.TASK_LIST_CHANGED, handler)
+  },
+  onTaskRunAlert: (
+    cb: (p: {
+      taskId: string
+      taskName: string
+      exitCode: number
+      executionId: string
+      scriptName: string
+    }) => void
+  ) => {
+    const handler = (_e: unknown, payload: unknown) => {
+      try {
+        cb(payload as Parameters<typeof cb>[0])
+      } catch (e) {
+        console.error('[preload] onTaskRunAlert', e)
+      }
+    }
+    ipcRenderer.on(IPC.TASK_RUN_ALERT, handler)
+    return () => ipcRenderer.removeListener(IPC.TASK_RUN_ALERT, handler)
+  },
+
+  // Execution logs
+  executionLogList: (opts?: { limit?: number }) =>
+    invokeTwo(IPC.LOG_LIST, cloneForIpc(opts ?? {})),
+  executionLogGet: (id: string) => invokeTwo(IPC.LOG_GET, id),
 
   // Settings
   settingsGet: () => ipcRenderer.invoke(IPC.SETTINGS_GET),

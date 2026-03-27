@@ -31,20 +31,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Document, Timer, Memo, Collection, Setting } from '@element-plus/icons-vue'
+import { Document, Timer, Memo, Collection, Setting, List } from '@element-plus/icons-vue'
+import { ElNotification } from 'element-plus'
 
 const route = useRoute()
 const activeRoute = computed(() => route.path)
 
 const navItems = [
-  { path: '/scripts',    label: '脚本库',    icon: Document },
-  { path: '/cheatsheet', label: '命令速查',  icon: Memo },
-  { path: '/scheduler',  label: '定时任务',  icon: Timer },
-  { path: '/snippets',   label: '代码片段',  icon: Collection },
-  { path: '/settings',   label: '设置',      icon: Setting }
+  { path: '/scripts',         label: '脚本库',   icon: Document },
+  { path: '/cheatsheet',      label: '命令速查', icon: Memo },
+  { path: '/scheduler',       label: '定时任务', icon: Timer },
+  { path: '/execution-logs',  label: '执行记录', icon: List },
+  { path: '/snippets',        label: '代码片段', icon: Collection },
+  { path: '/settings',        label: '设置',     icon: Setting }
 ]
+
+let detachTaskAlert: (() => void) | null = null
+
+onMounted(() => {
+  detachTaskAlert = window.api.onTaskRunAlert((p) => {
+    ElNotification({
+      title: '定时任务执行失败',
+      message: `「${p.taskName}」退出码 ${p.exitCode}。${p.scriptName ? `详情：${p.scriptName}` : ''}`,
+      type: 'error',
+      duration: 0
+    })
+  })
+})
+
+onUnmounted(() => {
+  detachTaskAlert?.()
+})
 </script>
 
 <style>

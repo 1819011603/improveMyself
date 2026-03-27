@@ -58,6 +58,19 @@ export interface ExecutionLog {
   params: Record<string, string>
 }
 
+/** 执行记录列表（不含 output 全文） */
+export interface ExecutionLogListItem {
+  id: string
+  scriptId?: string
+  scriptName?: string
+  taskId?: string
+  taskName?: string
+  startedAt: string
+  finishedAt?: string
+  exitCode?: number | null
+  params: Record<string, string>
+}
+
 export type CheatsheetCategory =
   | 'git'
   | 'docker'
@@ -125,6 +138,10 @@ export const IPC = {
   TASK_DELETE: 'task:delete',
   TASK_TOGGLE: 'task:toggle',
   TASK_RUN_NOW: 'task:runNow',
+  /** 定时任务状态或列表有变，渲染进程可刷新任务列表 */
+  TASK_LIST_CHANGED: 'task:listChanged',
+  /** 定时任务本次执行失败（非 0 退出码），用于桌面提醒 */
+  TASK_RUN_ALERT: 'task:runAlert',
 
   // Logs
   LOG_LIST: 'log:list',

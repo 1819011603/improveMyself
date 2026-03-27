@@ -23,6 +23,11 @@ const router = createRouter({
       component: () => import('../pages/scheduler/SchedulerPage.vue')
     },
     {
+      path: '/execution-logs',
+      name: 'execution-logs',
+      component: () => import('../pages/execution-history/ExecutionHistoryPage.vue')
+    },
+    {
       path: '/snippets',
       name: 'snippets',
       component: () => import('../pages/snippets/SnippetsPage.vue')

@@ -8,6 +8,7 @@
       <template #header>
         <span class="card-title">执行历史</span>
       </template>
+      <p class="card-intro">完整执行列表（含定时任务、输出全文）在侧边栏「执行记录」中查看。</p>
       <el-form label-width="180px" label-position="left" @submit.prevent>
         <el-form-item label="保留记录条数">
           <div class="field-row">
@@ -131,6 +132,13 @@ async function save() {
 
 .card-title {
   font-weight: 600;
+}
+
+.card-intro {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+  margin: -4px 0 12px;
 }
 
 .field-row {

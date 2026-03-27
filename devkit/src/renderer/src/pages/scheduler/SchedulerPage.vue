@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
@@ -96,9 +96,18 @@ const rules = {
   cron: [{ required: true, message: '请输入 Cron 表达式' }]
 }
 
+let detachTaskSync: (() => void) | null = null
+
 onMounted(() => {
   store.fetchList()
   scriptsStore.fetchList()
+  detachTaskSync = window.api.onTaskListChanged(() => {
+    void store.fetchList()
+  })
+})
+
+onUnmounted(() => {
+  detachTaskSync?.()
 })
 
 function formatDate(iso: string) {

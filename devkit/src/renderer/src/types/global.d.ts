@@ -3,7 +3,9 @@ import type {
   Script,
   ScriptInterpreter,
   CheatsheetEntry,
-  ScheduledTask
+  ScheduledTask,
+  ExecutionLog,
+  ExecutionLogListItem
 } from '@shared/types'
 
 declare global {
@@ -36,6 +38,19 @@ declare global {
       taskDelete(id: string): Promise<boolean>
       taskToggle(id: string): Promise<ScheduledTask>
       taskRunNow(id: string): Promise<boolean>
+      onTaskListChanged(cb: () => void): () => void
+      onTaskRunAlert(
+        cb: (p: {
+          taskId: string
+          taskName: string
+          exitCode: number
+          executionId: string
+          scriptName: string
+        }) => void
+      ): () => void
+
+      executionLogList(opts?: { limit?: number }): Promise<ExecutionLogListItem[]>
+      executionLogGet(id: string): Promise<ExecutionLog | null>
 
       settingsGet(): Promise<AppSettingsSnapshot>
       settingsSet(partial: {

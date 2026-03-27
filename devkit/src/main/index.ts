@@ -6,6 +6,7 @@ import { registerScriptHandlers } from './ipc/scripts'
 import { registerCheatsheetHandlers, seedBuiltinCheatsheet } from './ipc/cheatsheet'
 import { registerSchedulerHandlers, initScheduler } from './ipc/scheduler'
 import { registerSettingsHandlers } from './ipc/settings'
+import { registerExecutionLogHandlers } from './ipc/execution-logs'
 
 process.on('unhandledRejection', (reason) => {
   console.error('[DevKit main] unhandledRejection:', reason)
@@ -75,6 +76,7 @@ app.whenReady().then(() => {
   registerCheatsheetHandlers()
   registerSchedulerHandlers()
   registerSettingsHandlers()
+  registerExecutionLogHandlers()
 
   // Seed built-in cheatsheet data
   seedBuiltinCheatsheet()

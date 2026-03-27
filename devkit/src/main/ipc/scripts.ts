@@ -1,25 +1,14 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import { spawn, ChildProcess } from 'child_process'
 import { randomUUID } from 'crypto'
 import type Database from 'better-sqlite3'
-import { getExecutionHistoryMaxCount, getExecutionOutputMaxBytes } from '../app-settings'
 import { getDb } from '../db'
-import { pruneFinishedExecutionLogs, truncateExecutionOutputUtf8 } from '../execution-log-maintenance'
-import {
-  executionBufferAppend,
-  executionBufferDispose,
-  executionBufferGet,
-  executionBufferInit,
-  executionBufferSetPid
-} from '../execution-buffer'
+import { executionBufferGet } from '../execution-buffer'
+import { runningProcesses, startScriptExecution } from '../script-execution'
 import { toIpcReply } from '../../shared/ipc-clone'
 import { IPC } from '../../shared/types'
 import type { Script, ScriptInterpreter } from '../../shared/types'
 
-// Track running processes: executionId -> process
-const runningProcesses = new Map<string, ChildProcess>()
-
-function rowToScript(row: Record<string, unknown>): Script {
+export function rowToScript(row: Record<string, unknown>): Script {
   return {
     id: row.id as string,
     name: row.name as string,
@@ -136,7 +125,7 @@ export function registerScriptHandlers(): void {
 
   ipcMain.handle(
     IPC.SCRIPT_RUN,
-    async (
+    (
       e,
       id: string,
       params: Record<string, string> = {},
@@ -146,79 +135,16 @@ export function registerScriptHandlers(): void {
       if (!row) throw new Error(`Script ${id} not found`)
 
       const script = rowToScript(row)
-      const platform = process.platform === 'win32' ? 'windows' : 'macos'
-      const config = script.platforms[platform]
-      const hasDebugBody = debug.content != null && String(debug.content).trim().length > 0
-      if (!config && !hasDebugBody) throw new Error(`No ${platform} version for this script`)
-
-      const rawTemplate = hasDebugBody ? String(debug.content) : (config?.content ?? '')
-      if (!rawTemplate.trim()) throw new Error('脚本内容为空')
-
-      const interpreter: ScriptInterpreter = hasDebugBody
-        ? debug.interpreter ?? config?.interpreter ?? 'bash'
-        : config!.interpreter
-
-      let content = rawTemplate
-      for (const [key, val] of Object.entries(params)) {
-        content = content.replaceAll(`{{${key}}}`, val)
-      }
-
-      const executionId = randomUUID()
-      const startedAt = new Date().toISOString()
-
-      db.prepare(`
-      INSERT INTO execution_logs (id, script_id, started_at, params, output)
-      VALUES (?, ?, ?, ?, '')
-    `).run(executionId, id, startedAt, JSON.stringify(params))
-
-      executionBufferInit(executionId, undefined)
-
       const win = BrowserWindow.fromWebContents(e.sender)
-
-      const interpreterMap: Record<string, string[]> = {
-        bash: ['bash', '-c'],
-        zsh: ['zsh', '-c'],
-        python: ['python3', '-c'],
-        node: ['node', '-e'],
-        powershell: ['powershell', '-Command'],
-        cmd: ['cmd', '/c']
-      }
-      const [cmd, ...spawnArgs] = interpreterMap[interpreter] || interpreterMap.bash
-      const child = spawn(cmd, [...spawnArgs, content], { shell: false })
-
-      runningProcesses.set(executionId, child)
-      const pid = typeof child.pid === 'number' ? child.pid : undefined
-      executionBufferSetPid(executionId, pid)
-      db.prepare(`UPDATE execution_logs SET spawn_pid = ? WHERE id = ?`).run(pid ?? null, executionId)
-
-      let output = ''
-
-      const sendOutput = (data: string, done = false, exitCode?: number) => {
-        if (data) executionBufferAppend(executionId, data)
-        output += data
-        const payload =
-          exitCode !== undefined
-            ? { executionId, data, done, exitCode }
-            : { executionId, data, done }
-        win?.webContents.send(IPC.SCRIPT_OUTPUT, toIpcReply(payload))
-      }
-
-      child.stdout.on('data', (data: Buffer) => sendOutput(data.toString()))
-      child.stderr.on('data', (data: Buffer) => sendOutput(data.toString()))
-
-      child.on('close', (code) => {
-        runningProcesses.delete(executionId)
-        executionBufferDispose(executionId)
-        const finishedAt = new Date().toISOString()
-        const storedOutput = truncateExecutionOutputUtf8(output, getExecutionOutputMaxBytes(db))
-        db.prepare(`
-        UPDATE execution_logs SET finished_at = ?, exit_code = ?, output = ? WHERE id = ?
-      `).run(finishedAt, code, storedOutput, executionId)
-        pruneFinishedExecutionLogs(db, getExecutionHistoryMaxCount(db))
-        sendOutput('', true, code ?? -1)
+      const result = startScriptExecution({
+        db,
+        script,
+        params,
+        debug,
+        taskId: null,
+        outputWebContents: win?.webContents ?? null
       })
-
-      return toIpcReply({ executionId, pid: pid ?? null })
+      return toIpcReply(result)
     }
   )
 
