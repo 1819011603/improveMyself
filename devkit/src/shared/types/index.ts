@@ -71,6 +71,22 @@ export interface ExecutionLogListItem {
   params: Record<string, string>
 }
 
+/** 执行记录列表筛选（主进程 LOG_LIST） */
+export type ExecutionLogStatusFilter = 'all' | 'success' | 'error' | 'running'
+export type ExecutionLogSourceFilter = 'all' | 'script' | 'task'
+
+export interface ExecutionLogListQuery {
+  limit?: number
+  /** 成功：已结束且 exit_code=0；失败：已结束且 exit_code≠0；进行中：无 finished_at */
+  status?: ExecutionLogStatusFilter
+  /** 仅脚本手动运行 / 仅定时任务触发 */
+  source?: ExecutionLogSourceFilter
+  /** 仅某条定时任务 */
+  taskId?: string
+  /** 匹配脚本名、定时任务名或记录 id 片段 */
+  search?: string
+}
+
 export type CheatsheetCategory =
   | 'git'
   | 'docker'

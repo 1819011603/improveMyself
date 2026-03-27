@@ -2,11 +2,25 @@
   <div class="page">
     <div class="page-header">
       <h1 class="page-title">定时任务</h1>
-      <el-button type="primary" :icon="Plus" @click="showDialog = true">新建任务</el-button>
+      <div class="header-actions">
+        <el-select v-model="cardStatusFilter" placeholder="筛选状态" class="status-filter">
+          <el-option label="全部任务" value="all" />
+          <el-option label="上次成功" value="success" />
+          <el-option label="上次失败" value="error" />
+          <el-option label="运行中" value="running" />
+          <el-option label="未运行" value="idle" />
+        </el-select>
+        <el-button plain :icon="List" @click="goTaskExecutionLogs">定时执行记录</el-button>
+        <el-button type="primary" :icon="Plus" @click="showDialog = true">新建任务</el-button>
+      </div>
     </div>
 
     <div v-if="store.loading" class="state-center">
       <el-skeleton :rows="4" animated />
+    </div>
+
+    <div v-else-if="filteredTasks.length === 0 && store.list.length > 0" class="state-center">
+      <el-empty description="当前筛选下没有任务，请更换状态筛选" />
     </div>
 
     <div v-else-if="store.list.length === 0" class="state-center">
@@ -17,7 +31,7 @@
 
     <div v-else class="task-list">
       <el-card
-        v-for="task in store.list"
+        v-for="task in filteredTasks"
         :key="task.id"
         shadow="never"
         class="task-card"
@@ -44,6 +58,7 @@
           </div>
           <div class="task-actions">
             <el-button size="small" plain @click="store.runNow(task.id)">立即运行</el-button>
+            <el-button size="small" plain :icon="List" @click="goOneTaskLogs(task)">执行记录</el-button>
             <el-button size="small" type="danger" plain :icon="Delete" @click="confirmDelete(task)" />
           </div>
         </div>
@@ -76,17 +91,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Plus, Delete, List } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { useSchedulerStore } from '../../stores/scheduler'
 import { useScriptsStore } from '../../stores/scripts'
 import type { ScheduledTask } from '@shared/types'
 
+const router = useRouter()
 const store = useSchedulerStore()
 const scriptsStore = useScriptsStore()
 const scripts = scriptsStore.list
+const cardStatusFilter = ref<'all' | 'success' | 'error' | 'running' | 'idle'>('all')
 const showDialog = ref(false)
 const formRef = ref<FormInstance>()
 const form = ref({ name: '', scriptId: '', cron: '', enabled: true, description: '', params: {} })
@@ -94,6 +112,30 @@ const rules = {
   name: [{ required: true, message: '请输入任务名称' }],
   scriptId: [{ required: true, message: '请选择脚本' }],
   cron: [{ required: true, message: '请输入 Cron 表达式' }]
+}
+
+const filteredTasks = computed(() => {
+  const list = store.list
+  const f = cardStatusFilter.value
+  if (f === 'all') return list
+  return list.filter((t) => {
+    if (f === 'success') return t.lastStatus === 'success'
+    if (f === 'error') return t.lastStatus === 'error'
+    if (f === 'running') return t.lastStatus === 'running'
+    if (f === 'idle') return !t.lastStatus || t.lastStatus === undefined
+    return true
+  })
+})
+
+function goTaskExecutionLogs() {
+  router.push({ path: '/execution-logs', query: { source: 'task' } })
+}
+
+function goOneTaskLogs(task: ScheduledTask) {
+  router.push({
+    path: '/execution-logs',
+    query: { taskId: task.id, source: 'task', tn: task.name }
+  })
 }
 
 let detachTaskSync: (() => void) | null = null
@@ -133,7 +175,22 @@ async function submit() {
 
 <style scoped>
 .page { height: 100vh; display: flex; flex-direction: column; padding: 24px; gap: 16px; overflow: hidden; }
-.page-header { display: flex; align-items: center; justify-content: space-between; }
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.status-filter {
+  width: 140px;
+}
 .page-title { font-size: 20px; font-weight: 600; color: #1a1a2e; }
 .task-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .task-card { border: 1px solid #ebeef5; }

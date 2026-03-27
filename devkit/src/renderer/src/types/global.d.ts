@@ -5,7 +5,8 @@ import type {
   CheatsheetEntry,
   ScheduledTask,
   ExecutionLog,
-  ExecutionLogListItem
+  ExecutionLogListItem,
+  ExecutionLogListQuery
 } from '@shared/types'
 
 declare global {
@@ -49,7 +50,7 @@ declare global {
         }) => void
       ): () => void
 
-      executionLogList(opts?: { limit?: number }): Promise<ExecutionLogListItem[]>
+      executionLogList(opts?: ExecutionLogListQuery): Promise<ExecutionLogListItem[]>
       executionLogGet(id: string): Promise<ExecutionLog | null>
 
       settingsGet(): Promise<AppSettingsSnapshot>

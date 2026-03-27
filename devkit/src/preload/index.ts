@@ -118,7 +118,7 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   // Execution logs
-  executionLogList: (opts?: { limit?: number }) =>
+  executionLogList: (opts?: Record<string, unknown>) =>
     invokeTwo(IPC.LOG_LIST, cloneForIpc(opts ?? {})),
   executionLogGet: (id: string) => invokeTwo(IPC.LOG_GET, id),
 
