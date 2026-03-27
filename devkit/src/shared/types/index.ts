@@ -1,3 +1,21 @@
+import type { ApiWorkflowParamLayer } from './api-workflow'
+
+export type { SessionBundle, SessionBundleCookie, SessionBundleHeaderRule } from './api-workflow'
+export type {
+  ApiEnvironment,
+  ApiWorkflow,
+  ApiWorkflowStep,
+  ApiWorkflowRunResult,
+  ApiWorkflowRunStepResult,
+  ApiWorkflowRunContext,
+  ApiHttpHostEnv,
+  ApiWorkflowParamLayer,
+  ApiWorkflowRunOptions,
+  ApiWorkflowTryStepInput,
+  ApiWorkflowTryStepResult
+} from './api-workflow'
+export { SESSION_BUNDLE_VERSION } from './api-workflow'
+
 export type Platform = 'macos' | 'windows'
 
 export type ScriptInterpreter = 'bash' | 'zsh' | 'python' | 'node' | 'powershell' | 'cmd'
@@ -126,6 +144,17 @@ export interface AppSettingsSnapshot {
   executionOutputMaxBytes: number
   executionOutputMinBytes: number
   executionOutputLimitMaxBytes: number
+  /** 本机接收 Chrome 扩展推送的环境包（仅 127.0.0.1） */
+  sessionReceiverEnabled: boolean
+  sessionReceiverPort: number
+  sessionReceiverPortMin: number
+  sessionReceiverPortMax: number
+  /** 非空则扩展请求需带相同 Bearer / X-DevKit-Token */
+  sessionReceiverToken: string
+  /** HTTP 编排：全局扁平参数（键将合并进请求头，合法 token 名） */
+  apiWorkflowGlobalParams: Record<string, string>
+  /** 合并顺序：从左到右叠加，后者覆盖前者；默认 step→global→push（推送优先） */
+  apiWorkflowParamLayerOrder: ApiWorkflowParamLayer[]
 }
 
 // IPC channel names
@@ -165,5 +194,21 @@ export const IPC = {
 
   // Settings
   SETTINGS_GET: 'settings:get',
-  SETTINGS_SET: 'settings:set'
+  SETTINGS_SET: 'settings:set',
+
+  // API workflow (HTTP 编排 / 环境)
+  API_ENV_LIST: 'apiEnv:list',
+  API_ENV_GET: 'apiEnv:get',
+  API_ENV_CREATE: 'apiEnv:create',
+  API_ENV_UPDATE: 'apiEnv:update',
+  API_ENV_DELETE: 'apiEnv:delete',
+  API_ENV_IMPORT_JSON: 'apiEnv:importJson',
+  API_WORKFLOW_LIST: 'apiWorkflow:list',
+  API_WORKFLOW_GET: 'apiWorkflow:get',
+  API_WORKFLOW_CREATE: 'apiWorkflow:create',
+  API_WORKFLOW_UPDATE: 'apiWorkflow:update',
+  API_WORKFLOW_DELETE: 'apiWorkflow:delete',
+  API_WORKFLOW_RUN: 'apiWorkflow:run',
+  API_WORKFLOW_TRY_STEP: 'apiWorkflow:tryStep',
+  API_WORKFLOW_TRY_STEP_CURL: 'apiWorkflow:tryStepCurl'
 } as const

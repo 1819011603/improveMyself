@@ -98,10 +98,25 @@ import TerminalPanel from '../../components/TerminalPanel.vue'
 import { useScriptRunnerStore } from '../../stores/script-runner'
 import type { Script, ScriptInterpreter, TaskStatus } from '@shared/types'
 
-const props = defineProps<{ modelValue: boolean; script: Script | null }>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean
+    script: Script | null
+    /** 为 true 时，打开弹窗后若无进行中任务且必填参数已填则立即执行 */
+    autoRunOnOpen?: boolean
+  }>(),
+  { autoRunOnOpen: false }
+)
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const runner = useScriptRunnerStore()
+
+function clientDefaultInterpreter(): ScriptInterpreter {
+  const win =
+    typeof navigator !== 'undefined' &&
+    (/win/i.test(navigator.platform || '') || /windows/i.test(navigator.userAgent || ''))
+  return win ? 'powershell' : 'bash'
+}
 
 const visible = computed({
   get: () => props.modelValue,
@@ -111,7 +126,7 @@ const visible = computed({
 const terminalRef = ref<InstanceType<typeof TerminalPanel>>()
 const paramValues = ref<Record<string, string>>({})
 const draftContent = ref('')
-const draftInterpreter = ref<ScriptInterpreter>('bash')
+const draftInterpreter = ref<ScriptInterpreter>(clientDefaultInterpreter())
 const execStatus = ref<TaskStatus>('idle')
 const currentExecutionId = ref<string | null>(null)
 const startedAt = ref<number>()
@@ -167,7 +182,7 @@ function resetFormFromScript() {
   paramValues.value = next
   const cfg = currentPlatformConfig.value
   draftContent.value = cfg?.content ?? ''
-  draftInterpreter.value = cfg?.interpreter ?? 'bash'
+  draftInterpreter.value = cfg?.interpreter ?? clientDefaultInterpreter()
 }
 
 function ensureOutputListener() {
@@ -187,6 +202,17 @@ function ensureOutputListener() {
       currentPid.value = undefined
     }
   })
+}
+
+function canAutoRun(): boolean {
+  const s = props.script
+  if (!s) return false
+  for (const p of s.params) {
+    if (p.required && !String(paramValues.value[p.name] ?? '').trim()) {
+      return false
+    }
+  }
+  return true
 }
 
 async function startExecution() {
@@ -229,7 +255,7 @@ async function onOpenDialog() {
     paramValues.value = { ...existing.paramSnapshot }
     const cfg = currentPlatformConfig.value
     draftContent.value = existing.sourceContent ?? cfg?.content ?? ''
-    draftInterpreter.value = existing.interpreter ?? cfg?.interpreter ?? 'bash'
+    draftInterpreter.value = existing.interpreter ?? cfg?.interpreter ?? clientDefaultInterpreter()
     execStatus.value = 'running'
     startedAt.value = existing.startedAt
     lastRunDurationMs.value = null
@@ -250,9 +276,17 @@ async function onOpenDialog() {
   }
 }
 
-watch(visible, (v) => {
+watch(visible, async (v) => {
   if (v && props.script) {
-    void onOpenDialog()
+    await onOpenDialog()
+    if (props.autoRunOnOpen && execStatus.value === 'idle') {
+      await nextTick()
+      if (!canAutoRun()) {
+        ElMessage.warning('请先填写必填运行参数后再点击「运行」')
+      } else {
+        await startExecution()
+      }
+    }
   }
   if (!v) cleanup()
 })

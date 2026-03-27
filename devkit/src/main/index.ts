@@ -7,6 +7,8 @@ import { registerCheatsheetHandlers, seedBuiltinCheatsheet } from './ipc/cheatsh
 import { registerSchedulerHandlers, initScheduler } from './ipc/scheduler'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerExecutionLogHandlers } from './ipc/execution-logs'
+import { registerApiWorkflowHandlers } from './ipc/api-workflow'
+import { startSessionReceiver, stopSessionReceiver } from './session-receiver'
 
 process.on('unhandledRejection', (reason) => {
   console.error('[DevKit main] unhandledRejection:', reason)
@@ -77,12 +79,15 @@ app.whenReady().then(() => {
   registerSchedulerHandlers()
   registerSettingsHandlers()
   registerExecutionLogHandlers()
+  registerApiWorkflowHandlers()
 
   // Seed built-in cheatsheet data
   seedBuiltinCheatsheet()
 
   // Start cron scheduler
   initScheduler()
+
+  startSessionReceiver()
 
   createWindow()
 
@@ -91,7 +96,12 @@ app.whenReady().then(() => {
   })
 })
 
+app.on('before-quit', () => {
+  stopSessionReceiver()
+})
+
 app.on('window-all-closed', () => {
+  stopSessionReceiver()
   closeDb()
   if (process.platform !== 'darwin') app.quit()
 })

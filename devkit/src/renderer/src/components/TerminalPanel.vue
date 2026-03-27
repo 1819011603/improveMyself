@@ -8,7 +8,7 @@
       </div>
       <div class="terminal-actions">
         <el-button
-          v-if="status === 'running'"
+          v-if="killable && status === 'running'"
           size="small"
           type="danger"
           plain
@@ -30,12 +30,17 @@ import { FitAddon } from '@xterm/addon-fit'
 import 'xterm/css/xterm.css'
 import type { TaskStatus } from '@shared/types'
 
-const props = defineProps<{
-  status: TaskStatus
-  startedAt?: number
-  /** 最近一次结束后的总耗时（ms），用于 success/error 态展示 */
-  lastRunDurationMs?: number | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    status: TaskStatus
+    startedAt?: number
+    /** 最近一次结束后的总耗时（ms），用于 success/error 态展示 */
+    lastRunDurationMs?: number | null
+    /** 为 false 时不显示「终止」（例如不可中断的 HTTP 编排） */
+    killable?: boolean
+  }>(),
+  { killable: true }
+)
 
 const emit = defineEmits<{
   kill: []

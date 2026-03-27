@@ -6,7 +6,13 @@ import type {
   ScheduledTask,
   ExecutionLog,
   ExecutionLogListItem,
-  ExecutionLogListQuery
+  ExecutionLogListQuery,
+  ApiEnvironment,
+  ApiWorkflow,
+  ApiWorkflowRunResult,
+  ApiWorkflowTryStepResult,
+  ApiHttpHostEnv,
+  ApiWorkflowParamLayer
 } from '@shared/types'
 
 declare global {
@@ -57,7 +63,33 @@ declare global {
       settingsSet(partial: {
         executionHistoryMaxCount?: number
         executionOutputMaxBytes?: number
+        sessionReceiverEnabled?: boolean
+        sessionReceiverPort?: number
+        sessionReceiverToken?: string
+        apiWorkflowGlobalParams?: Record<string, string>
+        apiWorkflowParamLayerOrder?: ApiWorkflowParamLayer[]
       }): Promise<AppSettingsSnapshot>
+
+      apiEnvList(): Promise<ApiEnvironment[]>
+      apiEnvGet(id: string): Promise<ApiEnvironment | null>
+      apiEnvCreate(data: { name: string; bundle: unknown }): Promise<ApiEnvironment>
+      apiEnvImportJson(data: { name: string; json: string }): Promise<ApiEnvironment>
+      apiEnvUpdate(id: string, data: { name?: string; bundle?: unknown }): Promise<ApiEnvironment>
+      apiEnvDelete(id: string): Promise<boolean>
+      apiWorkflowList(): Promise<ApiWorkflow[]>
+      apiWorkflowGet(id: string): Promise<ApiWorkflow | null>
+      apiWorkflowCreate(data: unknown): Promise<ApiWorkflow>
+      apiWorkflowUpdate(id: string, data: unknown): Promise<ApiWorkflow>
+      apiWorkflowDelete(id: string): Promise<boolean>
+      apiWorkflowRun(id: string, opts?: { httpHostEnv?: ApiHttpHostEnv }): Promise<ApiWorkflowRunResult>
+      apiWorkflowTryStep(
+        step: unknown,
+        opts?: { httpHostEnv?: ApiHttpHostEnv }
+      ): Promise<ApiWorkflowTryStepResult>
+      apiWorkflowTryStepCurl(
+        step: unknown,
+        opts?: { httpHostEnv?: ApiHttpHostEnv }
+      ): Promise<{ curl: string } | { error: string }>
     }
   }
 }

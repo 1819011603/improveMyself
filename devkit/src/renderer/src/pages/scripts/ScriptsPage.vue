@@ -57,25 +57,21 @@
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="360" fixed="right" align="center">
+        <el-table-column label="操作" width="440" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="!runner.isRunning(row.id)"
-              type="primary"
-              size="small"
-              :icon="VideoPlay"
-              @click="openRunDialog(row)"
-            >
+            <el-button type="primary" size="small" :icon="VideoPlay" @click="openRunDialog(row, true)">
               运行
             </el-button>
-            <span v-else class="op-group">
-              <el-button type="primary" size="small" plain :icon="View" @click="openRunDialog(row)">
-                查看终端
-              </el-button>
-              <el-button type="danger" size="small" :icon="VideoPause" @click="onStopRow(row)">
-                结束
-              </el-button>
-            </span>
+            <el-button size="small" :icon="View" @click="openRunDialog(row, false)">查看</el-button>
+            <el-button
+              v-if="runner.isRunning(row.id)"
+              type="danger"
+              size="small"
+              :icon="VideoPause"
+              @click="onStopRow(row)"
+            >
+              结束
+            </el-button>
             <el-button size="small" :icon="CopyDocument" @click="onDuplicate(row)" />
             <el-button size="small" :icon="Edit" @click="openEditDialog(row)" />
             <el-button size="small" type="danger" plain :icon="Delete" @click="confirmDelete(row)" />
@@ -86,7 +82,7 @@
 
     <ScriptFormDialog v-model="formVisible" :script="editingScript" @saved="onSaved" />
 
-    <ScriptRunDialog v-model="runVisible" :script="runningScript" />
+    <ScriptRunDialog v-model="runVisible" :script="runningScript" :auto-run-on-open="runAutoStart" />
   </div>
 </template>
 
@@ -105,6 +101,7 @@ const runner = useScriptRunnerStore()
 const searchText = ref('')
 const formVisible = ref(false)
 const runVisible = ref(false)
+const runAutoStart = ref(false)
 const editingScript = ref<Script | null>(null)
 const runningScript = ref<Script | null>(null)
 
@@ -123,6 +120,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch(runVisible, (v) => {
+  if (!v) runAutoStart.value = false
+})
 
 let debounceTimer: ReturnType<typeof setTimeout>
 function debouncedFetch() {
@@ -164,8 +165,9 @@ function openEditDialog(script: Script) {
   formVisible.value = true
 }
 
-function openRunDialog(script: Script) {
+function openRunDialog(script: Script, autoRun: boolean) {
   runningScript.value = script
+  runAutoStart.value = autoRun
   runVisible.value = true
 }
 
@@ -250,14 +252,6 @@ async function confirmDelete(script: Script) {
 
 .tag-mr {
   margin-right: 4px;
-}
-
-.op-group {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  vertical-align: middle;
 }
 
 .state-loading,

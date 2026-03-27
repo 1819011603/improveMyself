@@ -45,14 +45,20 @@ contextBridge.exposeInMainWorld('api', {
   scriptExecutionBuffer: (executionId: string) => invokeTwo(IPC.SCRIPT_EXECUTION_BUFFER, executionId),
   scriptKill: (executionId: string) => invokeTwo(IPC.SCRIPT_KILL, executionId),
   onScriptOutput: (cb: (payload: { executionId: string; data: string; done: boolean; exitCode?: number }) => void) => {
-    ipcRenderer.on(IPC.SCRIPT_OUTPUT, (_e, payload) => {
+    const handler = (
+      _e: Electron.IpcRendererEvent,
+      payload: { executionId: string; data: string; done: boolean; exitCode?: number }
+    ) => {
       try {
         cb(payload)
       } catch (e) {
         console.error('[preload] onScriptOutput 回调异常', e)
       }
-    })
-    return () => ipcRenderer.removeAllListeners(IPC.SCRIPT_OUTPUT)
+    }
+    ipcRenderer.on(IPC.SCRIPT_OUTPUT, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.SCRIPT_OUTPUT, handler)
+    }
   },
 
   // Cheatsheet
@@ -124,8 +130,38 @@ contextBridge.exposeInMainWorld('api', {
 
   // Settings
   settingsGet: () => ipcRenderer.invoke(IPC.SETTINGS_GET),
-  settingsSet: (partial: { executionHistoryMaxCount?: number; executionOutputMaxBytes?: number }) =>
-    invokeTwo(IPC.SETTINGS_SET, cloneForIpc(partial ?? {}))
+  settingsSet: (partial: {
+    executionHistoryMaxCount?: number
+    executionOutputMaxBytes?: number
+    sessionReceiverEnabled?: boolean
+    sessionReceiverPort?: number
+    sessionReceiverToken?: string
+    apiWorkflowGlobalParams?: Record<string, string>
+    apiWorkflowParamLayerOrder?: ('push' | 'global' | 'step')[]
+  }) => invokeTwo(IPC.SETTINGS_SET, cloneForIpc(partial ?? {})),
+
+  // API workflow / environments
+  apiEnvList: () => ipcRenderer.invoke(IPC.API_ENV_LIST),
+  apiEnvGet: (id: string) => invokeTwo(IPC.API_ENV_GET, id),
+  apiEnvCreate: (data: { name: string; bundle: unknown }) =>
+    invokeTwo(IPC.API_ENV_CREATE, cloneForIpc(data)),
+  apiEnvImportJson: (data: { name: string; json: string }) =>
+    invokeTwo(IPC.API_ENV_IMPORT_JSON, cloneForIpc(data)),
+  apiEnvUpdate: (id: string, data: { name?: string; bundle?: unknown }) =>
+    invokeThree(IPC.API_ENV_UPDATE, id, cloneForIpc(data ?? {})),
+  apiEnvDelete: (id: string) => invokeTwo(IPC.API_ENV_DELETE, id),
+  apiWorkflowList: () => ipcRenderer.invoke(IPC.API_WORKFLOW_LIST),
+  apiWorkflowGet: (id: string) => invokeTwo(IPC.API_WORKFLOW_GET, id),
+  apiWorkflowCreate: (data: unknown) => invokeTwo(IPC.API_WORKFLOW_CREATE, cloneForIpc(data ?? {})),
+  apiWorkflowUpdate: (id: string, data: unknown) =>
+    invokeThree(IPC.API_WORKFLOW_UPDATE, id, cloneForIpc(data ?? {})),
+  apiWorkflowDelete: (id: string) => invokeTwo(IPC.API_WORKFLOW_DELETE, id),
+  apiWorkflowRun: (id: string, opts?: { httpHostEnv?: 'prod' | 'test' | 'dev' }) =>
+    invokeThree(IPC.API_WORKFLOW_RUN, id, cloneForIpc(opts ?? {})),
+  apiWorkflowTryStep: (step: unknown, opts?: { httpHostEnv?: 'prod' | 'test' | 'dev' }) =>
+    invokeThree(IPC.API_WORKFLOW_TRY_STEP, cloneForIpc(step ?? {}), cloneForIpc(opts ?? {})),
+  apiWorkflowTryStepCurl: (step: unknown, opts?: { httpHostEnv?: 'prod' | 'test' | 'dev' }) =>
+    invokeThree(IPC.API_WORKFLOW_TRY_STEP_CURL, cloneForIpc(step ?? {}), cloneForIpc(opts ?? {}))
 })
 
 // Type declaration merged in renderer

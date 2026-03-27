@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Document, Timer, Memo, Collection, Setting, List } from '@element-plus/icons-vue'
+import { Document, Timer, Memo, Collection, Setting, List, Connection } from '@element-plus/icons-vue'
 import { ElNotification } from 'element-plus'
 
 const route = useRoute()
@@ -44,6 +44,7 @@ const navItems = [
   { path: '/cheatsheet',      label: '命令速查', icon: Memo },
   { path: '/scheduler',       label: '定时任务', icon: Timer },
   { path: '/execution-logs',  label: '执行记录', icon: List },
+  { path: '/api-workflow',    label: 'HTTP 编排', icon: Connection },
   { path: '/snippets',        label: '代码片段', icon: Collection },
   { path: '/settings',        label: '设置',     icon: Setting }
 ]

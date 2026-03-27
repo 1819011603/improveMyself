@@ -89,8 +89,50 @@ function runMigrations(): void {
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS api_environments (
+      id          TEXT PRIMARY KEY,
+      name        TEXT NOT NULL,
+      bundle_json TEXT NOT NULL DEFAULT '{}',
+      created_at  TEXT NOT NULL,
+      updated_at  TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS api_workflows (
+      id             TEXT PRIMARY KEY,
+      name           TEXT NOT NULL,
+      description    TEXT NOT NULL DEFAULT '',
+      environment_id TEXT,
+      created_at     TEXT NOT NULL,
+      updated_at     TEXT NOT NULL,
+      FOREIGN KEY (environment_id) REFERENCES api_environments(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS api_workflow_steps (
+      id           TEXT PRIMARY KEY,
+      workflow_id  TEXT NOT NULL,
+      sort_order   INTEGER NOT NULL,
+      name         TEXT NOT NULL,
+      method       TEXT NOT NULL,
+      url          TEXT NOT NULL,
+      headers_json TEXT NOT NULL DEFAULT '{}',
+      body         TEXT NOT NULL DEFAULT '',
+      extract_json TEXT NOT NULL DEFAULT '{}',
+      FOREIGN KEY (workflow_id) REFERENCES api_workflows(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_workflow_steps_wf ON api_workflow_steps(workflow_id);
+    CREATE INDEX IF NOT EXISTS idx_api_workflows_name ON api_workflows(name);
   `)
   ensureExecutionLogsSpawnPidColumn()
+  ensureApiWorkflowStepsParamsJsonColumn()
+}
+
+function ensureApiWorkflowStepsParamsJsonColumn(): void {
+  const cols = db.prepare(`PRAGMA table_info(api_workflow_steps)`).all() as { name: string }[]
+  if (!cols.some((c) => c.name === 'params_json')) {
+    db.exec(`ALTER TABLE api_workflow_steps ADD COLUMN params_json TEXT NOT NULL DEFAULT '{}'`)
+  }
 }
 
 function ensureExecutionLogsSpawnPidColumn(): void {

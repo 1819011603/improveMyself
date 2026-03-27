@@ -16,6 +16,9 @@ import type { Script, ScriptInterpreter } from '../shared/types'
 
 export const runningProcesses = new Map<string, ChildProcess>()
 
+const defaultScriptInterpreter: ScriptInterpreter =
+  process.platform === 'win32' ? 'powershell' : 'bash'
+
 function getOutputTargets(outputWebContents: Electron.WebContents | null | undefined): Electron.WebContents[] {
   if (outputWebContents) return [outputWebContents]
   return BrowserWindow.getAllWindows().map((w) => w.webContents)
@@ -64,12 +67,22 @@ export function startScriptExecution(opts: {
   if (!rawTemplate.trim()) throw new Error('脚本内容为空')
 
   const interpreter: ScriptInterpreter = hasDebugBody
-    ? debug.interpreter ?? config?.interpreter ?? 'bash'
+    ? debug.interpreter ?? config?.interpreter ?? defaultScriptInterpreter
     : config!.interpreter
 
   let content = rawTemplate
   for (const [key, val] of Object.entries(params)) {
     content = content.replaceAll(`{{${key}}}`, val)
+  }
+
+  /** 管道输出按 UTF-8，避免中文 Windows 默认代码页在终端里乱码 */
+  if (interpreter === 'powershell' && process.platform === 'win32') {
+    content =
+      '[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)' 
+      +'\n' +
+       ' $OutputEncoding = [Console]::OutputEncoding' +
+      '\n' +
+      content
   }
 
   const executionId = randomUUID()
@@ -89,10 +102,11 @@ export function startScriptExecution(opts: {
     zsh: ['zsh', '-c'],
     python: ['python3', '-c'],
     node: ['node', '-e'],
-    powershell: ['powershell', '-Command'],
+    powershell: ['powershell', '-NoProfile', '-Command'],
     cmd: ['cmd', '/c']
   }
-  const [cmd, ...spawnArgs] = interpreterMap[interpreter] || interpreterMap.bash
+  const [cmd, ...spawnArgs] =
+    interpreterMap[interpreter] || interpreterMap[defaultScriptInterpreter]
   const child = spawn(cmd, [...spawnArgs, content], { shell: false })
 
   runningProcesses.set(executionId, child)
@@ -122,39 +136,51 @@ export function startScriptExecution(opts: {
   child.stdout.on('data', (data: Buffer) => sendOutput(data.toString()))
   child.stderr.on('data', (data: Buffer) => sendOutput(data.toString()))
 
-  child.on('close', (code) => {
+  /** Windows 上部分 PowerShell/管道场景下 stdio 句柄未释放会导致 `close` 永不触发；`exit` 仍会在进程结束时触发 */
+  let settled = false
+  const finalize = (code: number | null, signal?: NodeJS.Signals) => {
+    if (settled) return
+    settled = true
+    const exitCode = code === null ? (signal ? -1 : 0) : code
+
     runningProcesses.delete(executionId)
     executionBufferDispose(executionId)
     const finishedAt = new Date().toISOString()
     const storedOutput = truncateExecutionOutputUtf8(output, getExecutionOutputMaxBytes(db))
     db.prepare(`
         UPDATE execution_logs SET finished_at = ?, exit_code = ?, output = ? WHERE id = ?
-      `).run(finishedAt, code, storedOutput, executionId)
+      `).run(finishedAt, exitCode, storedOutput, executionId)
     pruneFinishedExecutionLogs(db, getExecutionHistoryMaxCount(db))
 
     if (taskId) {
-      const status = code === 0 ? 'success' : 'error'
+      const status = exitCode === 0 ? 'success' : 'error'
       db.prepare(`UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?`).run(
         finishedAt,
         status,
         taskId
       )
       broadcastTaskListChanged()
-      if (code !== 0) {
+      if (exitCode !== 0) {
         const trow = db.prepare(`SELECT name FROM scheduled_tasks WHERE id = ?`).get(taskId) as
           | { name: string }
           | undefined
         broadcastTaskRunAlert({
           taskId,
           taskName: trow?.name ?? taskId,
-          exitCode: code ?? -1,
+          exitCode,
           executionId,
           scriptName: script.name
         })
       }
     }
 
-    sendOutput('', true, code ?? -1)
+    sendOutput('', true, exitCode)
+  }
+
+  child.on('exit', (code, signal) => finalize(code, signal))
+  child.on('error', (err) => {
+    sendOutput(`\n[spawn error] ${err.message}\n`)
+    finalize(1)
   })
 
   return { executionId, pid: pid ?? null }

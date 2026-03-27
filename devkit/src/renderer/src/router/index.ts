@@ -36,6 +36,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: () => import('../pages/settings/SettingsPage.vue')
+    },
+    {
+      path: '/api-workflow',
+      name: 'api-workflow',
+      component: () => import('../pages/api-workflow/ApiWorkflowPage.vue')
     }
   ]
 })
