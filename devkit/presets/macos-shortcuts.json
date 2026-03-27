@@ -1,0 +1,17 @@
+[
+  { "category": "macos", "command": "Cmd + Space", "description": "打开 Spotlight 搜索", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Tab", "description": "切换应用（按住 Cmd 再按 Tab 循环）", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + `", "description": "在同一应用的多个窗口间切换", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Q", "description": "退出应用", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + W", "description": "关闭当前窗口/标签", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Shift + 3", "description": "截全屏保存到桌面", "tags": ["截图"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Shift + 4", "description": "截选区保存到桌面", "tags": ["截图"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Shift + 4 + Space", "description": "截指定窗口", "tags": ["截图"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Ctrl + Shift + 4", "description": "截选区复制到剪贴板（不保存文件）", "tags": ["截图"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Option + Esc", "description": "强制退出应用", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + ,", "description": "打开当前应用的偏好设置", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Ctrl + Left/Right", "description": "切换 Mission Control 桌面空间", "tags": ["系统"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Shift + N", "description": "新建文件夹（Finder）", "tags": ["Finder"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Shift + G", "description": "前往指定路径（Finder）", "tags": ["Finder"], "platform": "macos" },
+  { "category": "macos", "command": "Cmd + Option + H + M", "description": "隐藏其他所有窗口并最小化当前窗口", "tags": ["系统"], "platform": "macos" }
+]

@@ -1,0 +1,16 @@
+[
+  { "category": "git", "command": "git status", "description": "查看工作区状态", "tags": ["常用"], "platform": "all" },
+  { "category": "git", "command": "git add -p", "description": "交互式暂存，按块选择", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git commit --amend --no-edit", "description": "将暂存区追加到上次提交，不修改 message", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git stash", "description": "储藏当前工作区改动", "tags": ["常用"], "platform": "all" },
+  { "category": "git", "command": "git stash pop", "description": "恢复最近一次储藏", "tags": ["常用"], "platform": "all" },
+  { "category": "git", "command": "git log --oneline --graph --all", "description": "图形化查看所有分支提交历史", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git diff --staged", "description": "查看已暂存的改动", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git reset HEAD~1", "description": "撤销上次提交，保留改动到工作区", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git clean -fd", "description": "删除未跟踪的文件和目录", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git checkout -b <branch>", "description": "创建并切换到新分支", "tags": ["常用"], "platform": "all" },
+  { "category": "git", "command": "git rebase -i HEAD~3", "description": "交互式变基，合并/编辑最近 3 次提交", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git cherry-pick <hash>", "description": "把某个 commit 应用到当前分支", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git remote -v", "description": "查看远程仓库地址", "tags": [], "platform": "all" },
+  { "category": "git", "command": "git fetch --prune", "description": "拉取远程并清理已删除的远程分支", "tags": [], "platform": "all" }
+]

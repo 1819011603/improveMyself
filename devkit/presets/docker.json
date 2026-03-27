@@ -1,0 +1,16 @@
+[
+  { "category": "docker", "command": "docker ps -a", "description": "列出所有容器（含已停止）", "tags": ["常用"], "platform": "all" },
+  { "category": "docker", "command": "docker images", "description": "列出本地镜像", "tags": ["常用"], "platform": "all" },
+  { "category": "docker", "command": "docker exec -it <container> bash", "description": "进入运行中的容器", "tags": ["常用"], "platform": "all" },
+  { "category": "docker", "command": "docker logs -f <container>", "description": "实时查看容器日志", "tags": ["常用"], "platform": "all" },
+  { "category": "docker", "command": "docker logs --tail 100 <container>", "description": "查看最近 100 行日志", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker stop $(docker ps -q)", "description": "停止所有运行中容器", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker rm $(docker ps -aq)", "description": "删除所有容器", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker rmi $(docker images -q)", "description": "删除所有镜像", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker system prune -a", "description": "清理所有未使用资源（镜像/容器/网络/缓存）", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker stats", "description": "实时查看容器资源占用", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker inspect <container>", "description": "查看容器详细配置（网络/挂载/环境变量）", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker cp <container>:/path/file .", "description": "从容器中复制文件到当前目录", "tags": [], "platform": "all" },
+  { "category": "docker", "command": "docker compose up -d", "description": "后台启动 docker compose 服务", "tags": ["常用"], "platform": "all" },
+  { "category": "docker", "command": "docker compose down -v", "description": "停止并删除容器和 volume", "tags": [], "platform": "all" }
+]

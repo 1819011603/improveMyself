@@ -1,0 +1,40 @@
+{
+  "name": "devkit",
+  "version": "0.1.0",
+  "description": "Personal developer efficiency tool",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "node-cron": "^3.0.3",
+    "xterm": "^5.3.0",
+    "@xterm/addon-fit": "^0.10.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@electron-toolkit/preload": "^3.0.0",
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "electron": "^31.0.0",
+    "electron-vite": "^2.3.0",
+    "element-plus": "^2.7.6",
+    "pinia": "^2.2.0",
+    "typescript": "^5.5.3",
+    "unplugin-auto-import": "^0.18.2",
+    "unplugin-vue-components": "^0.27.3",
+    "vue": "^3.4.31",
+    "vue-router": "^4.4.0",
+    "vue-tsc": "^2.0.26"
+  }
+}

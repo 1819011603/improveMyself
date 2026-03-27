@@ -1,0 +1,16 @@
+[
+  { "category": "process", "command": "lsof -i :<PORT>", "description": "查看占用某端口的进程", "tags": ["端口", "常用"], "platform": "macos" },
+  { "category": "process", "command": "kill -9 <PID>", "description": "强制杀死进程（kill -15 先试试）", "tags": ["常用"], "platform": "all" },
+  { "category": "process", "command": "pkill -f <keyword>", "description": "按进程名关键词批量杀进程", "tags": [], "platform": "macos" },
+  { "category": "process", "command": "ps aux | grep <keyword>", "description": "搜索进程", "tags": ["常用"], "platform": "macos" },
+  { "category": "process", "command": "Ctrl + C", "description": "中断当前前台进程（SIGINT）", "tags": ["卡住"], "platform": "all" },
+  { "category": "process", "command": "Ctrl + Z", "description": "挂起当前前台进程（放到后台暂停）", "tags": ["卡住"], "platform": "all" },
+  { "category": "process", "command": "Ctrl + D", "description": "发送 EOF，退出 shell / python repl / 等待输入的程序", "tags": ["卡住"], "platform": "all" },
+  { "category": "process", "command": "Ctrl + \\", "description": "发送 SIGQUIT，比 Ctrl+C 更暴力", "tags": ["卡住"], "platform": "all" },
+  { "category": "terminal", "command": "reset", "description": "终端乱码/显示异常时重置", "tags": ["卡住"], "platform": "all" },
+  { "category": "terminal", "command": "stty sane", "description": "修复终端不回显/无法输入的问题", "tags": ["卡住"], "platform": "all" },
+  { "category": "network", "command": "curl -I <URL>", "description": "只获取 HTTP 响应头", "tags": [], "platform": "all" },
+  { "category": "network", "command": "curl -v <URL> 2>&1 | head -50", "description": "查看完整 HTTP 请求/响应过程", "tags": [], "platform": "all" },
+  { "category": "network", "command": "netstat -an | grep LISTEN", "description": "查看所有监听端口", "tags": [], "platform": "macos" },
+  { "category": "network", "command": "ping -c 4 8.8.8.8", "description": "测试网络连通性", "tags": [], "platform": "macos" }
+]
